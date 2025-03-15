@@ -86,7 +86,7 @@ app.post('/api/select', async (req, res) => {
 
 // Retrieve the queue and selected player via GET /api/queue
 app.get('/api/queue', (req, res) => {
-  console.log("[QUEUE] Retrieving the queue.");
+  //console.log("[QUEUE] Retrieving the queue.");
   res.json({ queue: db.data.queue, selected: db.data.selected });
 });
 
