@@ -2,8 +2,8 @@
   "queue": [],
   "selected": null,
   "settings": {
-    "username": "klibatoo",
-    "joinCommand": "!join",
+    "username": "",
+    "joinCommand": "",
     "queueLimit": 30
   }
 }
