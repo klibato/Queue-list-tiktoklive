@@ -1,0 +1,19 @@
+{
+  "name": "brian",
+  "version": "1.0.0",
+  "bin": "server.js",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "klibato",
+  "license": "ISC",
+  "description": "queue list for brian",
+  "dependencies": {
+    "express": "^4.21.2",
+    "lowdb": "^7.0.1",
+    "tiktok-live-connector": "^1.2.3"
+  }
+}

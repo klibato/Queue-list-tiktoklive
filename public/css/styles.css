@@ -1,0 +1,127 @@
+/* style.css */
+
+/* ----- Couleurs principales ----- */
+:root {
+    --dark-bg: #1e1e2f;       /* Fond principal */
+    --card-bg: #2f314a;       /* Fond des cartes */
+    --text-color: #ffffff;    /* Couleur de texte principal */
+    --accent-color: #ffd700;  /* Couleur jaune pour les boutons et titres */
+  }
+  
+  /* ----- Reset et base ----- */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* ----- Container principal ----- */
+  .container {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+  }
+  
+  /* ----- Titres ----- */
+  h1, h2 {
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  h2 {
+    font-size: 1.4rem;
+  }
+  
+  /* ----- Paragraphes, libellés ----- */
+  p, label {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  
+  /* ----- Liens ----- */
+  a {
+    text-decoration: none;
+    color: var(--accent-color);
+    font-weight: bold;
+  }
+  
+  /* ----- Boutons ----- */
+  .btn {
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 5px;
+    display: inline-block;
+  }
+  .btn:hover {
+    background-color: #ffdd33;
+  }
+  
+  /* ----- Inputs ----- */
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+  }
+  
+  /* ----- Layout Queue ----- */
+  .queue-container {
+    display: flex;
+    gap: 30px;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .queue-section {
+    flex: 1;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    min-height: 200px;
+  }
+  .queue-section h2 {
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .queue-section ul {
+    list-style: none;
+    text-align: center;
+  }
+  .queue-section li {
+    margin: 8px 0;
+  }
+  
+  /* ----- Actions en bas de page (Queue) ----- */
+  .actions {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  

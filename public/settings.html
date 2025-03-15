@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Settings</h1>
+    <form id="settingsForm">
+      <div class="form-group">
+        <label for="username">TikTok Username:</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+      <div class="form-group">
+        <label for="joinCommand">Join Command:</label>
+        <input type="text" id="joinCommand" name="joinCommand" required>
+      </div>
+      <div class="form-group">
+        <label for="queueLimit">Max Queue Size:</label>
+        <input type="number" id="queueLimit" name="queueLimit" required>
+      </div>
+      <button type="submit" class="btn">Save Settings</button>
+    </form>
+
+    <hr>
+
+    <h2>TikTok Live Connection</h2>
+    <button id="connectTikTok" class="btn">Connect TikTok Live</button>
+    <p style="text-align: center;">Status: <span id="tiktokStatus">Unknown</span></p>
+
+    <a href="home.html" class="back">Return to Home</a>
+  </div>
+  <script src="js/settings.js"></script>
+</body>
+</html>

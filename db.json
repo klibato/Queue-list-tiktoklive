@@ -1,0 +1,9 @@
+{
+  "queue": [],
+  "selected": null,
+  "settings": {
+    "username": "klibatoo",
+    "joinCommand": "!join",
+    "queueLimit": 30
+  }
+}

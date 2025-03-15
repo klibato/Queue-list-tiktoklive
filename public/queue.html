@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Queue</title>
+  <link rel="stylesheet" href="css/queue.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Queue</h1>
+    <div class="sections">
+      <div class="section" id="queueSection">
+        <h2>Queue</h2>
+        <ul id="queueList">
+          <!-- List of users in the queue -->
+        </ul>
+      </div>
+      <div class="section" id="selectedSection">
+        <h2>Selected Player</h2>
+        <ul id="selectedList">
+          <!-- Currently selected player -->
+        </ul>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="selectBtn">Select Next Player</button>
+      <button id="resetQueue">Reset Queue</button>
+      <button id="returnHome">Home</button>
+    </div>
+    <div class="add-player">
+      <input type="text" id="playerInput" placeholder="Add a player (test)">
+      <button id="addPlayerBtn">Add</button>
+    </div>
+  </div>
+  <script src="js/queue.js"></script>
+</body>
+</html>
