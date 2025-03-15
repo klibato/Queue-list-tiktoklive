@@ -2,19 +2,31 @@ import express from 'express';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import pkg from 'tiktok-live-connector';
+import path from 'path';
+import { fileURLToPath } from 'url';
 const { WebcastPushConnection } = pkg;
 
 const app = express();
 const port = 3000;
 
+// Get __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the "public" folder
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route for the home page (root URL)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
 
 const defaultData = {
   queue: [],
   selected: null,
   settings: {
-    username: "YourTikTokUsername", // Remplacez par votre nom d'utilisateur TikTok
+    username: "YourTikTokUsername", // Replace with your TikTok username
     joinCommand: "!join",
     queueLimit: 10
   }
@@ -23,98 +35,99 @@ const defaultData = {
 const adapter = new JSONFile('db.json');
 const db = new Low(adapter, defaultData);
 
-// Chargement de la base de données au démarrage
+// Load the database at startup
 (async () => {
   await db.read();
   db.data ||= defaultData;
   await db.write();
-  console.log("Base de données initialisée :", db.data);
+  console.log("Database initialized:", db.data);
 })();
 
 let tiktokLive = null;
 let tiktokConnected = false;
-let connectionTimestamp = null; // Stocke le moment de la connexion
+let connectionTimestamp = null; // Stores the connection time
 
-/* ===== ENDPOINTS POUR LA GESTION DE LA FILE ET DES PARAMÈTRES ===== */
+/* ===== ENDPOINTS FOR QUEUE & SETTINGS MANAGEMENT ===== */
 
-// Ajouter un utilisateur à la file via API POST /api/join
+// Add a user to the queue via POST /api/join
 app.post('/api/join', async (req, res) => {
   const { username } = req.body;
-  console.log(`[JOIN] Tentative d'ajout de ${username}`);
-  // Vérifie si l'utilisateur est déjà dans la file ou est actuellement sélectionné
-  if (!db.data.queue.find(u => u.username === username) && (!db.data.selected || db.data.selected.username !== username)) {
+  console.log(`[JOIN] Attempting to add ${username}`);
+  // Check if the user is already in the queue or currently selected
+  if (!db.data.queue.find(u => u.username === username) &&
+      (!db.data.selected || db.data.selected.username !== username)) {
     if (db.data.queue.length < db.data.settings.queueLimit) {
       db.data.queue.push({ username, joinedAt: Date.now() });
       await db.write();
-      console.log(`[JOIN] ${username} ajouté à la file.`);
+      console.log(`[JOIN] ${username} added to the queue.`);
       return res.json({ success: true });
     } else {
-      console.log(`[JOIN] File pleine, impossible d'ajouter ${username}.`);
+      console.log(`[JOIN] Queue full, cannot add ${username}.`);
       return res.status(400).json({ success: false, message: "Queue full" });
     }
   }
-  console.log(`[JOIN] ${username} est déjà dans la file ou sélectionné.`);
+  console.log(`[JOIN] ${username} is already in the queue or selected.`);
   res.json({ success: false, message: "Already in queue or selected" });
 });
 
-// Sélectionner le prochain joueur via API POST /api/select
+// Select the next player via POST /api/select
 app.post('/api/select', async (req, res) => {
-  console.log("[SELECT] Tentative de sélection du prochain joueur.");
+  console.log("[SELECT] Attempting to select the next player.");
   if (db.data.queue.length > 0) {
     const nextUser = db.data.queue.shift();
     db.data.selected = nextUser;
     await db.write();
-    console.log(`[SELECT] ${nextUser.username} sélectionné.`);
+    console.log(`[SELECT] ${nextUser.username} selected.`);
     return res.json({ success: true, selected: nextUser });
   }
-  console.log("[SELECT] La file est vide.");
-  res.json({ success: false, message: 'La file est vide' });
+  console.log("[SELECT] The queue is empty.");
+  res.json({ success: false, message: 'Queue is empty' });
 });
 
-// Récupérer la file et le joueur sélectionné via API GET /api/queue
+// Retrieve the queue and selected player via GET /api/queue
 app.get('/api/queue', (req, res) => {
-  console.log("[QUEUE] Récupération de la file d'attente.");
+  console.log("[QUEUE] Retrieving the queue.");
   res.json({ queue: db.data.queue, selected: db.data.selected });
 });
 
-// Endpoint pour réinitialiser la file d'attente et le joueur sélectionné
+// Reset the queue and selected player via POST /api/queue/reset
 app.post('/api/queue/reset', async (req, res) => {
-  console.log("[RESET] Réinitialisation de la file d'attente demandée.");
+  console.log("[RESET] Reset queue requested.");
   db.data.queue = [];
   db.data.selected = null;
   await db.write();
-  return res.json({ success: true, message: "La file d'attente a été réinitialisée." });
+  return res.json({ success: true, message: "Queue has been reset." });
 });
 
-// Récupérer et mettre à jour les paramètres via API GET et POST /api/settings
+// Get and update settings via GET and POST /api/settings
 app.get('/api/settings', (req, res) => {
-  console.log("[SETTINGS] Récupération des paramètres.");
+  console.log("[SETTINGS] Retrieving settings.");
   res.json({ settings: db.data.settings });
 });
 app.post('/api/settings', async (req, res) => {
-  console.log("[SETTINGS] Mise à jour des paramètres :", req.body);
+  console.log("[SETTINGS] Updating settings:", req.body);
   db.data.settings = { ...db.data.settings, ...req.body };
   await db.write();
-  console.log("[SETTINGS] Nouveaux paramètres :", db.data.settings);
+  console.log("[SETTINGS] New settings:", db.data.settings);
   res.json({ success: true, settings: db.data.settings });
 });
 
-/* ===== ENDPOINTS POUR LA CONNEXION TIKTOK LIVE ===== */
+/* ===== ENDPOINTS FOR TIKTOK LIVE CONNECTION ===== */
 
-// Lancer la connexion TikTok Live via API POST /api/tiktok/connect
+// Connect to TikTok Live via POST /api/tiktok/connect
 app.post('/api/tiktok/connect', async (req, res) => {
-  console.log("[TIKTOK CONNECT] Requête de connexion TikTok Live reçue.");
+  console.log("[TIKTOK CONNECT] TikTok Live connection request received.");
   await db.read();
   const tiktokUsername = db.data.settings.username;
-  console.log("[TIKTOK CONNECT] Nom d'utilisateur utilisé :", tiktokUsername);
+  console.log("[TIKTOK CONNECT] Username used:", tiktokUsername);
 
-  // Si une connexion existe déjà, la déconnecter
+  // If a connection already exists, disconnect it
   if (tiktokLive) {
     try {
       tiktokLive.disconnect();
-      console.log("[TIKTOK CONNECT] Déconnexion de la session existante.");
+      console.log("[TIKTOK CONNECT] Existing session disconnected.");
     } catch (err) {
-      console.error("[TIKTOK CONNECT] Erreur lors de la déconnexion :", err.message);
+      console.error("[TIKTOK CONNECT] Error disconnecting existing session:", err.message);
     }
   }
 
@@ -124,55 +137,56 @@ app.post('/api/tiktok/connect', async (req, res) => {
     tiktokLive.on('connect', () => {
       tiktokConnected = true;
       connectionTimestamp = Date.now();
-      console.log(`[TIKTOK] Connecté au live TikTok pour ${tiktokUsername} à ${new Date(connectionTimestamp).toLocaleString()}`);
+      console.log(`[TIKTOK] Connected to TikTok Live for ${tiktokUsername} at ${new Date(connectionTimestamp).toLocaleString()}`);
     });
 
     tiktokLive.on('disconnect', () => {
       tiktokConnected = false;
-      console.log(`[TIKTOK] Déconnecté du live TikTok pour ${tiktokUsername}`);
+      console.log(`[TIKTOK] Disconnected from TikTok Live for ${tiktokUsername}`);
     });
 
     tiktokLive.on('chat', async (data) => {
-      console.log(`[TIKTOK CHAT] Data complète pour ${data.uniqueId}:`, data);
+      console.log(`[TIKTOK CHAT] Full data for ${data.uniqueId}:`, data);
       
       if (data.comment.trim() === db.data.settings.joinCommand) {
-        // Vérifier que l'utilisateur a followStatus > 0 (donc 1 ou 2)
+        // Check that the user has followStatus > 0 (i.e., 1 or 2)
         if (data.followInfo && data.followInfo.followStatus > 0) {
-          // Vérifier que l'utilisateur n'est pas déjà dans la file ou sélectionné
-          if (!db.data.queue.find(u => u.username === data.uniqueId) && (!db.data.selected || db.data.selected.username !== data.uniqueId)) {
-            console.log(`[TIKTOK CHAT] Commande join reçue de ${data.uniqueId} (followStatus: ${data.followInfo.followStatus}).`);
+          // Check that the user is not already in the queue or selected
+          if (!db.data.queue.find(u => u.username === data.uniqueId) &&
+              (!db.data.selected || db.data.selected.username !== data.uniqueId)) {
+            console.log(`[TIKTOK CHAT] Join command received from ${data.uniqueId} (followStatus: ${data.followInfo.followStatus}).`);
             if (db.data.queue.length < db.data.settings.queueLimit) {
               db.data.queue.push({ username: data.uniqueId, joinedAt: Date.now() });
               await db.write();
-              console.log(`[TIKTOK CHAT] ${data.uniqueId} ajouté à la file.`);
+              console.log(`[TIKTOK CHAT] ${data.uniqueId} added to the queue.`);
             } else {
-              console.log("[TIKTOK CHAT] La file est pleine, impossible d’ajouter un nouvel utilisateur.");
+              console.log("[TIKTOK CHAT] Queue is full, cannot add new user.");
             }
           } else {
-            console.log(`[TIKTOK CHAT] ${data.uniqueId} est déjà dans la file ou sélectionné.`);
+            console.log(`[TIKTOK CHAT] ${data.uniqueId} is already in the queue or selected.`);
           }
         } else {
-          console.log(`[TIKTOK CHAT] ${data.uniqueId} n'est pas follower (followStatus: ${data.followInfo ? data.followInfo.followStatus : 'inconnu'}). Ignoré.`);
+          console.log(`[TIKTOK CHAT] ${data.uniqueId} is not a follower (followStatus: ${data.followInfo ? data.followInfo.followStatus : 'unknown'}). Ignored.`);
         }
       }
     });
 
     await tiktokLive.connect();
     tiktokConnected = true;
-    console.log("[TIKTOK CONNECT] Connexion établie.");
-    return res.json({ success: true, message: "Connecté à TikTok Live", connected: tiktokConnected });
+    console.log("[TIKTOK CONNECT] Connection established.");
+    return res.json({ success: true, message: "Connected to TikTok Live", connected: tiktokConnected });
   } catch (err) {
     tiktokConnected = false;
-    console.error("[TIKTOK CONNECT] Erreur lors de la connexion à TikTok Live :", err.message);
+    console.error("[TIKTOK CONNECT] Error connecting to TikTok Live:", err.message);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// Retourner le statut de la connexion TikTok Live via API GET /api/tiktok/status
+// Return the TikTok Live connection status via GET /api/tiktok/status
 app.get('/api/tiktok/status', (req, res) => {
   res.json({ connected: tiktokConnected });
 });
 
 app.listen(port, () => {
-  console.log(`Application en écoute sur le port ${port}`);
+  console.log(`Server is listening on port ${port}`);
 });
